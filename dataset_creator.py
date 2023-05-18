@@ -5,7 +5,7 @@ import os
 WIDTH, HEIGHT = 1000, 480
 ROI = (100, 300, 300, 500)  # Coordinates for region of interest
 AREA_THRESHOLD = 5000  # Area threshold for hand detection
-IMAGE_DIR = './custom_dataset/2/'
+IMAGE_DIR = './custom_dataset/10/'
 
 
 def run_avg(img, weight, bg):
@@ -78,7 +78,7 @@ def main():
                                 to_save = cv2.resize(threshold, (64, 64))
                                 filename = os.path.join(IMAGE_DIR, 'img' + str(i) + '.jpg')
                                 if not os.path.exists(filename):
-                                    cv2.imwrite(filename, to_save)
+                                    # cv2.imwrite(filename, to_save)
                                     i = i + 1
                 cv2.rectangle(outer_frame, (ROI[2], ROI[0]), (ROI[3], ROI[1]), (0, 255, 0), 2)
                 cv2.putText(outer_frame, "Place your hand in the square", (10, 30), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 2)

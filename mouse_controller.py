@@ -35,6 +35,15 @@ last_defect_point = None
 moving_mode = False
 selected_defect_index = 0
 
+actions = {
+    0: "click_right",
+    1: "click_left",
+    2: "move",
+    3: "double_click",
+    4: "scroll_up",
+    5: "scroll_down",
+}
+
 
 def update_background(img, weight):
     global background_image
@@ -56,7 +65,7 @@ def segment(img, thres=THRESHOLD):
     return thresh, seg
 
 
-def calculateFingers(res, drawing):  # -> finished bool, cnt: finger count
+def calculate_fingers(res, drawing):
     #  convexity defect
     hull = cv2.convexHull(res, returnPoints=False)
     hull_points = cv2.convexHull(res, returnPoints=True)
@@ -88,17 +97,7 @@ def calculateFingers(res, drawing):  # -> finished bool, cnt: finger count
     return False, 0, defects, res
 
 
-actions = {
-    0: "click_right",
-    1: "click_left",
-    2: "move",
-    3: "double_click",
-    4: "scroll_up",
-    5: "scroll_down",
-}
-
-
-def get_gestureiction(img):
+def get_prediction(img):
     for_gesture = cv2.resize(img, (64, 64))
     x = img_to_array(for_gesture)
     x = x / 255.0
@@ -109,7 +108,7 @@ def get_gestureiction(img):
 
 while video_capture.isOpened():
     ret, frame = video_capture.read()
-
+    # frame = cv2.bilateralFilter(frame, 5, 50, 100)  # smoothing filter
     if ret:
         frame = cv2.flip(frame, 1)
         clone = frame.copy()
@@ -131,23 +130,18 @@ while video_capture.isOpened():
 
                 for cnt in contours:
                     if cv2.contourArea(cnt) > 5000:
-                        gesture = get_gestureiction(thresholded)
+                        gesture = get_prediction(thresholded)
 
-                        finished, num_defects, valid_defects, res = calculateFingers(segmented, clone)
+                        finished, num_defects, valid_defects, res = calculate_fingers(segmented, clone)
                         if gesture == "move":
                             if num_defects >= 1:
                                 if selected_defect_index >= len(valid_defects):
                                     selected_defect_index = 0  # Fall back to the first defect point
-                                # s, e, f, d = defects[0, 0]  # Select the first defect point
-                                # far = tuple(res[f][0])
                                 far = valid_defects[selected_defect_index]
-                                # far = (far[0] + ROI_START_Y,
-                                #        far[1] + ROI_START_X)  # Adjust the defect point coordinates based on the ROI
                                 cv2.circle(clone, far, 8, [0, 255, 0], -1)  # Draw the circle in green
 
                                 if moving_mode:  # If already in moving mode
                                     if last_defect_point is not None:
-                                        # Calculate the movement relative to the last defect point
                                         move_x = far[0] - last_defect_point[0]
                                         move_y = far[1] - last_defect_point[1]
                                         # Get the current mouse position
@@ -167,20 +161,21 @@ while video_capture.isOpened():
                                 moving_mode = False  # Exit moving mode
 
                         elif gesture == "click_right":
-                            # pyautogui.click(button='right')
-                            cv2.putText(clone, gesture, (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
+                            pyautogui.click(button='right')
+
                         elif gesture == "click_left":
-                            # pyautogui.click(button='left')
-                            cv2.putText(clone, gesture, (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
+                            pyautogui.click(button='left')
+
                         elif gesture == "double_click":
-                            # pyautogui.doubleClick()
-                            cv2.putText(clone, gesture, (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
+                            pyautogui.doubleClick()
+
                         elif gesture == "scroll_up":
-                            # pyautogui.scroll(50)
-                            cv2.putText(clone, gesture, (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
+                            pyautogui.scroll(50)
+
                         elif gesture == "scroll_down":
-                            # pyautogui.scroll(-50)
-                            cv2.putText(clone, gesture, (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
+                            pyautogui.scroll(-50)
+
+                        cv2.putText(clone, gesture, (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
 
         cv2.rectangle(clone, (ROI_START_Y, ROI_START_X), (ROI_END_Y, ROI_END_X), (0, 255, 0), 2)
         num_frames += 1
