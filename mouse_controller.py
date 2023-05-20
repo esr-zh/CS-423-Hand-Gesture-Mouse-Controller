@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import pyautogui
 import tensorflow as tf
+import time
 
 pyautogui.FAILSAFE = False
 
@@ -11,21 +12,21 @@ pyautogui.FAILSAFE = False
 FRAME_WIDTH = 2000
 FRAME_HEIGHT = 1160  # 580
 FRAME_RATE = 15  # new constant
-MODEL_PATH = 'saved_models/hand_classifier.h5'
-WEIGHT = 0.5
+MODEL_PATH = 'saved_models/hand_classifier1.h5'
+WEIGHT = 0.2
 ROI_START_X = 200
 ROI_END_X = 600
 ROI_START_Y = 600  # 300
 ROI_END_Y = 1000
-THRESHOLD = 40  # BINARY threshold
-BLUR_VAL = 31  # GaussianBlur parameter
+THRESHOLD = 17  # BINARY threshold
+BLUR_VAL = 41  # GaussianBlur parameter
 
 # Initialize video capture
 video_capture = cv2.VideoCapture(0)
 
 video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
 video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
-video_capture.set(cv2.CAP_PROP_FPS, FRAME_RATE)  # set frame rate
+# video_capture.set(cv2.CAP_PROP_FPS, FRAME_RATE)  # set frame rate
 
 # Load the model
 model = tf.keras.models.load_model(MODEL_PATH)
@@ -53,6 +54,7 @@ def update_background(img, weight):
     cv2.accumulateWeighted(img, background_image, weight)
 
 
+
 def segment(img, thres=THRESHOLD):
     global background_image
     diff = cv2.absdiff(background_image.astype('uint8'), img)
@@ -75,7 +77,7 @@ def calculate_fingers(res, drawing):
         try:
             defects = cv2.convexityDefects(res, hull)
         except:
-            defects = cv2.convexityDefects(res, hull)
+            defects = None
         if type(defects) != type(None):  # avoid crashing.   (BUG not found)
             cnt = 0
             valid_defect_points = []  # List to store valid defect points
@@ -108,9 +110,9 @@ def get_prediction(img):
 
 while video_capture.isOpened():
     ret, frame = video_capture.read()
-    # frame = cv2.bilateralFilter(frame, 5, 50, 100)  # smoothing filter
     if ret:
         frame = cv2.flip(frame, 1)
+        frame = cv2.bilateralFilter(frame, 5, 50, 100)  # smoothing filter
         clone = frame.copy()
         (height, width) = frame.shape[:2]
         roi = frame[ROI_START_X:ROI_END_X, ROI_START_Y:ROI_END_Y]  # [100:300, 300:500]
@@ -162,18 +164,23 @@ while video_capture.isOpened():
 
                         elif gesture == "click_right":
                             pyautogui.click(button='right')
+                            # time.sleep(0.5)
 
                         elif gesture == "click_left":
                             pyautogui.click(button='left')
+                            # time.sleep(0.5)
 
                         elif gesture == "double_click":
                             pyautogui.doubleClick()
+                            # time.sleep(0.5)
 
                         elif gesture == "scroll_up":
                             pyautogui.scroll(50)
+                            # time.sleep(0.5)
 
                         elif gesture == "scroll_down":
                             pyautogui.scroll(-50)
+                            # time.sleep(0.5)
 
                         cv2.putText(clone, gesture, (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
 
